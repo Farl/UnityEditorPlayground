@@ -34,20 +34,19 @@ public class TestWindow : EditorWindow {
         {
             foreach (Type t in assembly.GetTypes())
             {
-                if (t.IsSubclassOf(typeof(UnityEngine.Object)))
+				if (t.IsSubclassOf(fieldInfo.FieldType))
                 {
                     object[] attributeArray = (attributeFilter != null)? t.GetCustomAttributes(attributeFilter, false): t.GetCustomAttributes(false);
 
-                    if (attributeArray != null)
-                    {
-                        foreach (var a in attributeArray)
-                        {
-                            if (attributeFilter == null || a.GetType() == attributeFilter)
-                            {
-                                typeList.Add(t);
-                            }
-                        }
-                    }
+					if (attributeArray != null && attributeArray.Length > 0) {
+						foreach (var a in attributeArray) {
+							if (attributeFilter == null || a.GetType () == attributeFilter) {
+								typeList.Add (t);
+							}
+						}
+					} else if (attributeFilter == null) {
+						typeList.Add (t);
+					}
                 }
             }
         }
@@ -63,29 +62,32 @@ public class TestWindow : EditorWindow {
                 {
                     if (property.propertyType == SerializedPropertyType.ObjectReference)
                     {
-                        if (fieldInfo.FieldType == typeof(MonoBehaviour))
+						if (fieldInfo.FieldType.IsSubclassOf(typeof(MonoBehaviour)))
                         {
                             
                         }
-                        else if (fieldInfo.FieldType == typeof(ScriptableObject))
+						else if (fieldInfo.FieldType.Equals(typeof(ScriptableObject)) || fieldInfo.FieldType.IsSubclassOf(typeof(ScriptableObject)))
                         {
                             fieldInfo.SetValue(obj, ScriptableObject.CreateInstance(t));
                         }
                     }
-                    Type objType = obj.GetType();
-                    
-                    System.Reflection.MethodInfo mi = objType.GetMethod(methodName, System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
-                    if (mi != null)
-                    {
-                        try
-                        {
-                            mi.Invoke(obj, new object[] { t });
-                        }
-                        catch (Exception exp)
-                        {
 
-                        }
-                    }
+					if (!string.IsNullOrEmpty (methodName)) {
+						Type objType = obj.GetType();
+
+						System.Reflection.MethodInfo mi = objType.GetMethod(methodName, System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+						if (mi != null)
+						{
+							try
+							{
+								mi.Invoke(obj, new object[] { t });
+							}
+							catch (Exception exp)
+							{
+
+							}
+						}
+					}
                 }
                 EditorGUILayout.EndScrollView();
                 this.Close();
